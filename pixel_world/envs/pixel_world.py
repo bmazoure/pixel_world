@@ -61,7 +61,7 @@ class PixelWorld(gym.Env):
     
     def reset(self):
         self.current_state = self.initial_state
-        return self.current_state
+        return self._map2screen(True)
     
 if __name__ == "__main__":
     env = PixelWorld(navigation_alphabet(),"../../maps/room1.txt")
