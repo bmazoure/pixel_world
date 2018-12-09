@@ -6,6 +6,7 @@ import sys
 import os 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append('/'.join(dir_path.split('/')[:-1]))
+sys.path.append(os.getcwd()+"\\pixel_world\\pixel_world\\")
 from env_utils import *
 import numpy as np
 
