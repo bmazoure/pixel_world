@@ -16,9 +16,9 @@ class DiscreteState(object):
 def navigation_alphabet():
     return {
             '#':{'reward_pdf':lambda :0,'terminal':False,'accessible':False,'color':[0,0,0],'stochastic':False},
-            ' ':{'reward_pdf':lambda :0,'terminal':False,'accessible':True,'color':[255,255,255],'stochastic':False},
-            'S':{'reward_pdf':lambda :0,'terminal':False,'accessible':True,'color':[255,255,255],'stochastic':False},
-            '0':{'reward_pdf':lambda :np.abs(np.random.normal(loc=1,scale=0.1,size=1)).item(),'terminal':True,'accessible':True,'color':[50,50,255],'stochastic':False}
+            ' ':{'reward_pdf':lambda :-1,'terminal':False,'accessible':True,'color':[255,255,255],'stochastic':False},
+            'S':{'reward_pdf':lambda :-1,'terminal':False,'accessible':True,'color':[255,255,255],'stochastic':False},
+            '0':{'reward_pdf':lambda :0,'terminal':True,'accessible':True,'color':[50,50,255],'stochastic':False}
             }
 
 def plot_screen(env,ax):

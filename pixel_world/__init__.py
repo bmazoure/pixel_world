@@ -8,5 +8,5 @@ project_root = '/'.join(dir_path.split('/')[:-1])
 register(
     id='PixelWorld-v0',
     entry_point='pixel_world.envs:PixelWorld',
-    kwargs={'reward_mapping':navigation_alphabet(),'world_map':project_root+"/maps/room1.txt"}
+    kwargs={'reward_mapping':navigation_alphabet(),'world_map':project_root+"/maps/room1_small.txt"}
 )
