@@ -13,3 +13,8 @@ register(
     entry_point='pixel_world.envs:PixelWorld',
     kwargs={'reward_mapping':navigation_alphabet(),'world_map':project_root+sep+"maps"+sep+"room1_small.txt"}
 )
+register(
+    id='PixelWorld-v1',
+    entry_point='pixel_world.envs:PixelWorld',
+    kwargs={'reward_mapping':navigation_alphabet(),'world_map':project_root+sep+"maps"+sep+"room2_small.txt"}
+)
