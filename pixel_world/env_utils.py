@@ -21,7 +21,14 @@ def navigation_alphabet():
             '0':{'reward_pdf':lambda :0,'terminal':True,'accessible':True,'color':[50,50,255],'stochastic':False}
             }
 
+def noisy_navigation_alphabet():
+    return {
+            '#':{'reward_pdf':lambda :0,'terminal':False,'accessible':False,'color':[0,0,0],'stochastic':False},
+            ' ':{'reward_pdf':lambda :np.random.normal(loc=-1,scale=0.1,size=1).item(),'terminal':False,'accessible':True,'color':[255,255,255],'stochastic':True},
+            'S':{'reward_pdf':lambda :np.random.normal(loc=-1,scale=0.1,size=1).item(),'terminal':False,'accessible':True,'color':[255,255,255],'stochastic':True},
+            '0':{'reward_pdf':lambda :0,'terminal':True,'accessible':True,'color':[50,50,255],'stochastic':False}
+            }
+
 def plot_screen(env,ax):
-    assert type(env).__name__ is 'PixelWorld'
     ax.imshow(env._map2screen())
     plt.show()
