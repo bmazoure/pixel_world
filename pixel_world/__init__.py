@@ -18,3 +18,8 @@ register(
     entry_point='pixel_world.envs:PixelWorld',
     kwargs={'reward_mapping':noisy_navigation_alphabet(),'world_map':project_root+sep+"maps"+sep+"room2_small.txt"}
 )
+register(
+    id='PixelWorld-v2',
+    entry_point='pixel_world.envs:PixelWorld',
+    kwargs={'reward_mapping':noisy_navigation_alphabet(),'world_map':project_root+sep+"maps"+sep+"room3_small.txt"}
+)
