@@ -15,18 +15,19 @@ import matplotlib.pyplot as plt
 class PixelWorld(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self,reward_mapping,world_map="maps/room1.txt",default_state=' ',agent_color=[50,205,50]):
+    def __init__(self,reward_mapping,world_map="maps/room1.txt",default_state=' '):
         self.raw_map = []
-        self.agent_color = agent_color
+        self.agent_color = reward_mapping['.agent']['color']
         self.initial_state = None
         self.default_state = default_state
         with open(world_map,"r") as f:
             for i,line in enumerate(f.readlines()):
                 acc = []
                 for j,s in enumerate(line.strip()):
+                    s = s if s in reward_mapping else self.default_state # if we see an unassigned state, make it default
                     state = DiscreteState(**reward_mapping[s],coords=np.array([i,j]))
                     acc.append(state)
-                    if s == "S":
+                    if state.initial: # Note that this overwrites multiple start states to the most recent one
                         self.initial_state = state
                 self.raw_map.append(acc)
         self.dim = (len(self.raw_map),len(self.raw_map[0]))
