@@ -20,6 +20,7 @@ class PixelWorld(gym.Env):
         self.agent_color = reward_mapping['.agent']['color']
         self.initial_state = None
         self.default_state = default_state
+        self.accessible_states = []
         with open(world_map,"r") as f:
             for i,line in enumerate(f.readlines()):
                 acc = []
@@ -29,6 +30,8 @@ class PixelWorld(gym.Env):
                     acc.append(state)
                     if state.initial: # Note that this overwrites multiple start states to the most recent one
                         self.initial_state = state
+                    if reward_mapping[s]['accessible']:
+                        self.accessible_states.append(state)
                 self.raw_map.append(acc)
         self.dim = (len(self.raw_map),len(self.raw_map[0]))
         self.current_state = self.initial_state
