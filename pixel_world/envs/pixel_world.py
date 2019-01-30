@@ -35,44 +35,38 @@ class PixelWorldSampler(object):
         self.template = template_env
         self.map = self.template.text_map
         self.goal_symbol = -1
-        self.agent_symbol = -1
         for symbol,d in self.template.reward_mapping.items():
-            if 'initial' in d and 'terminal' in d:
-                if d['initial'] or d['terminal']:
-                    if d['initial']:
-                        self.agent_symbol = symbol
-                    if d['terminal']:
-                        self.goal_symbol = symbol
+            if 'terminal' in d:
+                if d['terminal']:
+                    self.goal_symbol = symbol
                     for i,line in enumerate(self.map):
                         self.map[i] = line.replace(symbol,self.template.default_state)
         self.accessible_states = self.template.accessible_states
         
     def generate(self,train,train_split,test_split):
         assert train_split + test_split <= 100
-        train_th = len(self.accessible_states) * (len(self.accessible_states)-1)
-        rs = np.random.RandomState(0)
-        idx = rs.permutation(list(range(train_th)))
-        test_th = int(train_th *test_split/100)
-        train_th = int(train_th * train_split/100)
-        idx = idx[:train_th] if train else idx[train_th:train_th+test_th]
-        k = 0
+        d = lambda x,y:np.linalg.norm(x-y,ord=None)
+        agent_coords = self.template.current_state.coords
+        unordered_goals = list(filter(lambda x:np.any(x.coords != agent_coords),self.accessible_states))
+        # closer <--------> further
+        ordered_goals = sorted(unordered_goals,key=lambda x:d(x.coords,agent_coords))
+        th = int(len(ordered_goals) * train_split/100 if train else len(ordered_goals) * test_split/100)
+        useful_goals = ordered_goals[:th] if train else ordered_goals[-th:]
+        # train_th = len(self.accessible_states) * (len(self.accessible_states)-1)
+        # rs = np.random.RandomState(0)
+        # idx = rs.permutation(list(range(train_th)))
+        # test_th = int(train_th *test_split/100)
+        # train_th = int(train_th * train_split/100)
         acc = []
-        for start_state in self.accessible_states:
-            for goal_state in self.accessible_states:
-                x_goal,y_goal = goal_state.coords
-                x_start,y_start = start_state.coords
-                if x_goal == x_start and y_goal == y_start:
-                    continue
-                k += 1
-                new_map = np.array(self.map,copy=True)
-                for i,line in enumerate(new_map):
-                    for j,c in enumerate(line):
-                        if x_goal == i and y_goal == j:
-                            new_map[i] = new_map[i][:j] + self.goal_symbol + new_map[i][j+1:]
-                        if x_start == i and y_start == j:
-                            new_map[i] = new_map[i][:j] + self.agent_symbol + new_map[i][j+1:]
-                acc.append('\n'.join(new_map))
-        return np.array(acc)[idx] 
+        for goal_state in useful_goals:
+            x_goal,y_goal = goal_state.coords
+            new_map = np.array(self.map,copy=True)
+            for i,line in enumerate(new_map):
+                for j,c in enumerate(line):
+                    if x_goal == i and y_goal == j:
+                        new_map[i] = new_map[i][:j] + self.goal_symbol + new_map[i][j+1:]
+            acc.append('\n'.join(new_map))
+        return np.array(acc)
 
 class PixelWorld(gym.Env):
     metadata = {'render.modes': ['human']}
