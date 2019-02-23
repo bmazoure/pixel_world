@@ -34,3 +34,8 @@ register(
     entry_point='pixel_world.envs:PixelWorld',
     kwargs={'reward_mapping':noisy_navigation_alphabet(),'world_map':project_root+sep+"maps"+sep+"room5_medium.txt",'from_string':False}
 )
+register(
+    id='PixelWorld-v5',
+    entry_point='pixel_world.envs:PixelWorld',
+    kwargs={'reward_mapping':noisy_navigation_alphabet(),'world_map':project_root+sep+"maps"+sep+"room5_medium_walls.txt",'from_string':False}
+)

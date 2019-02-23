@@ -58,6 +58,17 @@ class PixelWorldSampler(object):
         # test_th = int(train_th *test_split/100)
         # train_th = int(train_th * train_split/100)
         acc = []
+        # mat = self.template.observation_space.sample()
+        # for i in range(mat.shape[1]):
+        #     for j in range(mat.shape[2]):
+        #         mat[:,i,j] = [255,255,255]
+        #         if i == 0 or j == 0 or i == mat.shape[1]-1 or j == mat.shape[2]-1:
+        #             mat[:,i,j]=[0,0,0]
+        #         for s in useful_goals:
+        #             if i == s.coords[0] and j == s.coords[1]:
+        #                 mat[:,i,j] = [255,125,125]
+            
+        
         for goal_state in useful_goals:
             x_goal,y_goal = goal_state.coords
             new_map = np.array(self.map,copy=True)
