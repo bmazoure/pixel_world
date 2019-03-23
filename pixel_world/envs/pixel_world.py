@@ -50,6 +50,7 @@ class PixelWorldSampler(object):
         unordered_goals = list(filter(lambda x:np.any(x.coords != agent_coords),self.accessible_states))
         # closer <--------> further
         ordered_goals = sorted(unordered_goals,key=lambda x:d(x.coords,agent_coords))
+        ordered_goals = unordered_goals ### test for Devon
         th = int(len(ordered_goals) * train_split/100 if train else len(ordered_goals) * test_split/100)
         useful_goals = ordered_goals[:th] if train else ordered_goals[-th:]
         # train_th = len(self.accessible_states) * (len(self.accessible_states)-1)
@@ -82,7 +83,8 @@ class PixelWorldSampler(object):
 class PixelWorld(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self,reward_mapping,world_map="maps/room1.txt",default_state=' ',from_string=False):
+    def __init__(self,reward_mapping,world_map="maps/room1.txt",default_state=' ',from_string=False,as_image=True,actions='2d'):
+        self.as_image = as_image
         self.raw_map = []
         self.agent_color = reward_mapping['.agent']['color']
         self.initial_state = None
@@ -106,11 +108,23 @@ class PixelWorld(gym.Env):
                 if reward_mapping[s]['accessible']:
                     self.accessible_states.append(state)
             self.raw_map.append(acc)
-        self.dim = (len(self.raw_map),len(self.raw_map[0]))
+        self.dim = (len(self.raw_map)-1,len(self.raw_map[0])-1)
         self.current_state = self.initial_state
-        self.action_vectors = np.array([[-1,0],[0,1],[1,0],[0,-1]])
-        self.action_space = spaces.Discrete(4)
-        self.observation_space = spaces.Box(low=0,high=255,shape=(3,self.dim[0],self.dim[1]),dtype=np.uint8)
+        if actions == '2d':
+            self.action_vectors = np.array([[-1,0],[0,1],[1,0],[0,-1]])
+            self.action_space = spaces.Discrete(4)
+        elif actions == 'horizontal':
+            self.action_vectors = np.array([[0,1],[0,-1]])
+            self.action_space = spaces.Discrete(2)
+        elif actions == 'vertical':
+            self.action_vectors = np.array([[1,0],[-1,0]])
+            self.action_space = spaces.Discrete(2)
+        if self.as_image:
+            self.observation_space = spaces.Box(low=0,high=255,shape=(3,self.dim[0],self.dim[1]),dtype=np.uint8)
+        else:
+            low = np.array([0,0])
+            high = np.array([len(self.raw_map)-1,len(self.raw_map[0])-1])
+            self.observation_space = spaces.Box(low=low,high=high,dtype=np.uint8)
         
     def _map2screen(self,transpose=False):
         pixel_map = []
@@ -135,11 +149,13 @@ class PixelWorld(gym.Env):
         next_state = self._project(self.current_state.coords + action)
         self.current_state = self.current_state if next_state == -1 else next_state
         reward = self.current_state.get_reward()
-        return self._map2screen(True),reward,int(self.current_state.terminal),{} 
+        next_obs = self.current_state.coords if not self.as_image else self._map2screen(True)
+        return next_obs,reward,int(self.current_state.terminal),{} 
     
     def reset(self):
         self.current_state = self.initial_state
-        return self._map2screen(True)
+        next_obs = self.current_state.coords if not self.as_image else self._map2screen(True)
+        return next_obs
     
 if __name__ == "__main__":
     env = PixelWorld(navigation_alphabet(),"../../maps/room1.txt")
