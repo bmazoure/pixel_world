@@ -85,6 +85,7 @@ class PixelWorld(gym.Env):
 
     def __init__(self,reward_mapping,world_map="maps/room1.txt",default_state=' ',from_string=False,as_image=True,actions='2d'):
         self.as_image = as_image
+        self.actions = actions
         self.raw_map = []
         self.agent_color = reward_mapping['.agent']['color']
         self.initial_state = None
@@ -110,15 +111,19 @@ class PixelWorld(gym.Env):
             self.raw_map.append(acc)
         self.dim = (len(self.raw_map)-1,len(self.raw_map[0])-1)
         self.current_state = self.initial_state
-        if actions == '2d':
+        if self.actions == '2d_discrete':
             self.action_vectors = np.array([[-1,0],[0,1],[1,0],[0,-1]])
             self.action_space = spaces.Discrete(4)
-        elif actions == 'horizontal':
+        elif self.actions == 'horizontal':
             self.action_vectors = np.array([[0,1],[0,-1]])
             self.action_space = spaces.Discrete(2)
-        elif actions == 'vertical':
+        elif self.actions == 'vertical':
             self.action_vectors = np.array([[1,0],[-1,0]])
             self.action_space = spaces.Discrete(2)
+        if self.actions == '2d_continuous':
+            low = np.array([-1,-1])
+            high = np.array([1,1])
+            self.action_space = spaces.Box(low=low,high=high,dtype=np.float32)
         if self.as_image:
             self.observation_space = spaces.Box(low=0,high=255,shape=(3,self.dim[0],self.dim[1]),dtype=np.uint8)
         else:
@@ -141,15 +146,19 @@ class PixelWorld(gym.Env):
     def _project(self,state):
         i = max(0,min(self.dim[0],state[0])) # Find new (i,j) coordinates but without the agent falling
         j = max(0,min(self.dim[1],state[1]))
-        next_state = self.raw_map[i][j] # If the state is not accessible (e.g. wall), return -1 and stay in place
-        return next_state if next_state.accessible else -1
+        next_state = self.raw_map[int(i)][int(j)] # If the state is not accessible (e.g. wall), return -1 and stay in place
+        return (i,j),next_state if next_state.accessible else -1
 
     def step(self, action):
-        action = self._action2vec(action)
-        next_state = self._project(self.current_state.coords + action)
+        if self.actions != '2d_continuous':
+            action = self._action2vec(action)
+        else:
+            action = action + np.array([0.5,0.5])
+        s_p_a = self.current_state.coords + action
+        s_p_a, next_state = self._project(s_p_a)
         self.current_state = self.current_state if next_state == -1 else next_state
         reward = self.current_state.get_reward()
-        next_obs = self.current_state.coords if not self.as_image else self._map2screen(True)
+        next_obs = s_p_a if not self.as_image else self._map2screen(True)
         return next_obs,reward,int(self.current_state.terminal),{} 
     
     def reset(self):
