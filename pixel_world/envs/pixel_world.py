@@ -109,7 +109,7 @@ class PixelWorld(gym.Env):
                 if reward_mapping[s]['accessible']:
                     self.accessible_states.append(state)
             self.raw_map.append(acc)
-        self.dim = (len(self.raw_map)-1,len(self.raw_map[0])-1)
+        self.dim = (len(self.raw_map),len(self.raw_map[0]))
         self.current_state = self.initial_state
         if self.actions == '2d_discrete':
             self.action_vectors = np.array([[-1,0],[0,1],[1,0],[0,-1]])
@@ -144,8 +144,8 @@ class PixelWorld(gym.Env):
         return self.action_vectors[action]
     
     def _project(self,state):
-        i = max(0,min(self.dim[0],state[0])) # Find new (i,j) coordinates but without the agent falling
-        j = max(0,min(self.dim[1],state[1]))
+        i = max(0,min(self.dim[0]-1,state[0])) # Find new (i,j) coordinates but without the agent falling
+        j = max(0,min(self.dim[1]-1,state[1]))
         next_state = self.raw_map[int(i)][int(j)] # If the state is not accessible (e.g. wall), return -1 and stay in place
         return (i,j),next_state if next_state.accessible else -1
 
