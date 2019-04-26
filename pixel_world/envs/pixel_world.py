@@ -154,12 +154,13 @@ class PixelWorld(gym.Env):
             action = self._action2vec(action)
         else:
             action = action + np.array([0.5,0.5])
-        is_terminal = int(self.current_state.terminal)
         s_p_a = self.current_state.coords + action
         s_p_a, next_state = self._project(s_p_a)
-        reward = self.current_state.get_reward()
+        
         self.current_state = self.current_state if next_state == -1 else next_state
         
+        reward = self.current_state.get_reward()
+        is_terminal = int(self.current_state.terminal)
         next_obs = s_p_a if not self.as_image else self._map2screen(True)
         return next_obs,reward,is_terminal,{} 
     
@@ -168,12 +169,12 @@ class PixelWorld(gym.Env):
         next_obs = self.current_state.coords if not self.as_image else self._map2screen(True)
         return next_obs
     
-if __name__ == "__main__":
-    env = PixelWorld(navigation_alphabet(),"../../maps/room1.txt")
-    print(env.current_state.coords)
-    env.step(0)
-    env.reset()
-    print(env.current_state.coords)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    plot_screen(env,ax)
+# if __name__ == "__main__":
+#     env = PixelWorld(navigation_alphabet(),"../../maps/room1.txt")
+#     print(env.current_state.coords)
+#     env.step(0)
+#     env.reset()
+#     print(env.current_state.coords)
+#     fig = plt.figure()
+#     ax = fig.add_subplot(111)
+#     plot_screen(env,ax)
