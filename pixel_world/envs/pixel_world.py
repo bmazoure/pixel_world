@@ -163,6 +163,12 @@ class PixelWorld(gym.Env):
         is_terminal = int(self.current_state.terminal)
         next_obs = s_p_a if not self.as_image else self._map2screen(True)
         return next_obs,reward,is_terminal,{} 
+
+    def reset_to_state(self,state):
+        for s in self.accessible_states:
+            if np.all(s.coords == state):
+                print(s.coords,state)
+                self.current_state = s
     
     def reset(self):
         self.current_state = self.initial_state
