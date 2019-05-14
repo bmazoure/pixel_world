@@ -154,10 +154,13 @@ class PixelWorld(gym.Env):
             action = self._action2vec(action)
         else:
             action = action + np.array([0.5,0.5])
-        s_p_a = self.current_state.coords + action
-        s_p_a, next_state = self._project(s_p_a)
+        s_p_a = self.current_state.coords
+        next_s_p_a = self.current_state.coords + action
+        next_s_p_a, next_state = self._project(s_p_a)
         
-        self.current_state = self.current_state if next_state == -1 else next_state
+        if next_state != -1:
+            self.current_state = next_state
+            s_p_a = next_s_p_a
         
         reward = self.current_state.get_reward()
         is_terminal = int(self.current_state.terminal)
