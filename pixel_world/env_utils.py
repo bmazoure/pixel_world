@@ -3,7 +3,7 @@ import torch
 import matplotlib.pyplot as plt
 
 class DiscreteState(object):
-    def __init__(self,reward_pdf,stochastic,terminal,accessible,color,coords,initial):
+    def __init__(self,reward_pdf,stochastic,terminal,accessible,color,coords,initial,collectible):
         self.reward_pdf = reward_pdf # e.g. |N(0,1)| on [0,+inf)
         self.reward = None if stochastic else self.reward_pdf()
         self.terminal = terminal
@@ -11,6 +11,7 @@ class DiscreteState(object):
         self.accessible = accessible
         self.coords = coords
         self.initial = initial
+        self.collectible = collectible
     def get_reward(self):
         return self.reward if self.reward else self.reward_pdf()
 

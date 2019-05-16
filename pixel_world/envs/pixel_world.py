@@ -130,6 +130,7 @@ class PixelWorld(gym.Env):
             low = np.array([0,0])
             high = np.array([len(self.raw_map)-1,len(self.raw_map[0])-1])
             self.observation_space = spaces.Box(low=low,high=high,dtype=np.uint8)
+        self.visited = []
         
     def _map2screen(self,transpose=False):
         pixel_map = []
@@ -156,13 +157,18 @@ class PixelWorld(gym.Env):
             action = action + np.array([0.5,0.5])
         s_p_a = self.current_state.coords
         next_s_p_a = self.current_state.coords + action
-        next_s_p_a, next_state = self._project(s_p_a)
+        next_s_p_a, next_state = self._project(next_s_p_a)
         
         if next_state != -1:
             self.current_state = next_state
             s_p_a = next_s_p_a
-        
-        reward = self.current_state.get_reward()
+
+        if self.current_state.collectible and self.current_state in self.visited: # if collectible, reset reward back to default
+            reward = -1
+        else: 
+            reward = self.current_state.get_reward()
+
+        self.visited.append(self.current_state)
         is_terminal = int(self.current_state.terminal)
         next_obs = s_p_a if not self.as_image else self._map2screen(True)
         return next_obs,reward,is_terminal,{} 
@@ -172,10 +178,12 @@ class PixelWorld(gym.Env):
             if np.all(s.coords == state):
                 print(s.coords,state)
                 self.current_state = s
+        self.visited = []
     
     def reset(self):
         self.current_state = self.initial_state
         next_obs = self.current_state.coords if not self.as_image else self._map2screen(True)
+        self.visited = []
         return next_obs
     
 # if __name__ == "__main__":
