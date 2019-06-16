@@ -39,7 +39,14 @@ The environment can build arbitrary defined maps. For example, *room5_medium.txt
 
 The environment has four actions: {**↑**,**→**,**↓**,**←**} corresponding to integers from 0 to 3 and encoded using standard basis vectors, which are then added to the agent's position and clipped to the environment's dimensions.
 
-The state space of the environment is a tensor n x m x 3, where n,m are the dimensions of the gridworld.
+Four action typed are allowed:
+
+* 1d_discrete: up, down, left, right;
+* 1d_horizontal: left, right;
+* 1d_vertical: up, down;
+* 2d_continuous: 2d real valued vector taking values from [-1,1].
+
+The state space of the environment is the Euclidean coordinate tuple (x,y). Alternatively, the observation tensor n x m x 3, where n,m are the dimensions of the gridworld, can be returned with the flag `state_type=image`.
 
 Custom state types are allowed. Below are some default state types:
 
@@ -61,6 +68,7 @@ Each state is a `DiscreteState` instance with the following attributes:
     * `lambda: np.abs(np.random.normal(loc=1,scale=0.1,size=1)).item()` - |*N*(0,1)|;
     * `lambda: 10` - Dirac at 10;
     * `lambda: np.random.uniform(0,1,size=1)).item()` - |*U*(0,1)|.
+* **collectible**: {True,False}, whether the rewards of the state are reset to the default value after the first visit during an episode.
 
 ## Adding new maps
 
