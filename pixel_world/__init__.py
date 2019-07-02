@@ -1,7 +1,7 @@
 from gym.envs.registration import register
 
 from .env_utils import navigation_alphabet, noisy_navigation_alphabet
-from .envs.pixel_world import PixelWorld, PixelWorldSampler
+from .envs.pixel_world import PixelWorld
 import os 
 is_windows = os.name == 'nt'
 dir_path = os.path.dirname(os.path.realpath(__file__))
