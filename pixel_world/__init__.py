@@ -12,7 +12,7 @@ sep = '/' if not is_windows else '\\'
 register(
     id='PixelWorld-v0',
     entry_point='pixel_world.envs:PixelWorld',
-    kwargs={'reward_mapping':noisy_navigation_alphabet(),'world_map':project_root+sep+"maps"+sep+"room1_small.txt",'from_string':False}
+    kwargs={'reward_mapping':navigation_alphabet(),'world_map':project_root+sep+"maps"+sep+"room1_small.txt",'from_string':False}
 )
 register(
     id='PixelWorld-v1',

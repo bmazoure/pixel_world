@@ -33,7 +33,7 @@ def navigation_alphabet():
             '#':{'reward_pdf':lambda :0,'terminal':False,'accessible':False,'color':[0,0,0],'stochastic':False,'initial':False,'collectible':False},
             ' ':{'reward_pdf':lambda :-1,'terminal':False,'accessible':True,'color':[255,255,255],'stochastic':False,'initial':False,'collectible':False},
             'S':{'reward_pdf':lambda :-1,'terminal':False,'accessible':True,'color':[255,255,255],'stochastic':False,'initial':True,'collectible':False},
-            '0':{'reward_pdf':lambda :0,'terminal':True,'accessible':True,'color':[50,50,255],'stochastic':False,'initial':False,'collectible':False},
+            '0':{'reward_pdf':lambda :1,'terminal':True,'accessible':True,'color':[50,50,255],'stochastic':False,'initial':False,'collectible':False},
             '.agent':{'color':[50,205,50]}
             }
 

@@ -16,7 +16,7 @@ class EnvReader(object):
     """
     Reads a gridworld environment either from a file or from a string.
     """
-    def __init__(self,source,source_type):
+    def __init__(self,source,source_type,symbols):
         """
         Args:
             source: Either filename or map of the gridworld
@@ -25,6 +25,7 @@ class EnvReader(object):
         self.memory = []
         self.source = source
         self.source_type = source_type
+        self.symbols = set(list(symbols) + ['\n'])
 
     def read(self):
         if self.source_type == 'file':
@@ -32,70 +33,20 @@ class EnvReader(object):
             self.memory = [line.strip() for line in f.readlines()]
             f.close()
         else:
-            self.memory = self.source.split('\n')
+            tmp = ''.join(filter(self.symbols.__contains__, self.source))
+            self.memory = tmp.split('\n')
+            for i in range(len(self.memory)):
+                self.memory[i] = self.memory[i].strip()
+            self.memory = list(filter(None,self.memory))
         return self.memory
 
     def close(self):
         self.memory = []
         
-class PixelWorldSampler(object):
-    """
-    WIP
-    Allows to automatically generate multiple navigation tasks from a sample gridworld map.
-    """
-    def __init__(self,template_env):
-        self.template = template_env
-        self.map = self.template.text_map
-        self.goal_symbol = -1
-        for symbol,d in self.template.reward_mapping.items():
-            if 'terminal' in d:
-                if d['terminal']:
-                    self.goal_symbol = symbol
-                    for i,line in enumerate(self.map):
-                        self.map[i] = line.replace(symbol,self.template.default_state)
-        self.accessible_states = self.template.accessible_states
-        
-    def generate(self,train,train_split,test_split):
-        assert train_split + test_split <= 100
-        d = lambda x,y:np.linalg.norm(x-y,ord=None)
-        agent_coords = self.template.current_state.coords
-        unordered_goals = list(filter(lambda x:np.any(x.coords != agent_coords),self.accessible_states))
-        # closer <--------> further
-        ordered_goals = sorted(unordered_goals,key=lambda x:d(x.coords,agent_coords))
-        ordered_goals = unordered_goals ### test for Devon
-        th = int(len(ordered_goals) * train_split/100 if train else len(ordered_goals) * test_split/100)
-        useful_goals = ordered_goals[:th] if train else ordered_goals[-th:]
-        # train_th = len(self.accessible_states) * (len(self.accessible_states)-1)
-        # rs = np.random.RandomState(0)
-        # idx = rs.permutation(list(range(train_th)))
-        # test_th = int(train_th *test_split/100)
-        # train_th = int(train_th * train_split/100)
-        acc = []
-        # mat = self.template.observation_space.sample()
-        # for i in range(mat.shape[1]):
-        #     for j in range(mat.shape[2]):
-        #         mat[:,i,j] = [255,255,255]
-        #         if i == 0 or j == 0 or i == mat.shape[1]-1 or j == mat.shape[2]-1:
-        #             mat[:,i,j]=[0,0,0]
-        #         for s in useful_goals:
-        #             if i == s.coords[0] and j == s.coords[1]:
-        #                 mat[:,i,j] = [255,125,125]
-            
-        
-        for goal_state in useful_goals:
-            x_goal,y_goal = goal_state.coords
-            new_map = np.array(self.map,copy=True)
-            for i,line in enumerate(new_map):
-                for j,c in enumerate(line):
-                    if x_goal == i and y_goal == j:
-                        new_map[i] = new_map[i][:j] + self.goal_symbol + new_map[i][j+1:]
-            acc.append('\n'.join(new_map))
-        return np.array(acc)
-
 class PixelWorld(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self,reward_mapping,world_map="maps/room1.txt",default_state=' ',from_string=False,state_type="xy",actions='2d_discrete'):
+    def __init__(self,reward_mapping,world_map="maps/room1.txt",default_state=' ',from_string=False,state_type="xy",actions='2d_discrete',channels_first=True,max_steps=30):
         """
         Main class of a pixel world type. Everything is a Discrete State object, with (x,y) coordinates saved, but RGB observations can be returned instead.
         Args:
@@ -105,9 +56,13 @@ class PixelWorld(gym.Env):
             from_string: Whether the world_map is a filename or a map.
             state_type: Either the true state (x,y coordinats in this case), or observations (RGB output).
             actions: Of the following types: 1d_discrete (up, right, down,left), 1d_horizontal (left, right), 1d_vertical (up, down), 2d_continuous (2d vector between [-1,1]).
+            channels_first (bool): If True, tranposes channels to (3,h,w) instead of (h,w,3).
+            max_steps (int): Number of maximum episode length.
         """
         self.state_type = state_type
         self.actions = actions
+        self.channels_first = channels_first
+        self.max_steps = max_steps
         self.raw_map = []
         self.agent_color = reward_mapping['.agent']['color']
         self.initial_states = []
@@ -115,7 +70,7 @@ class PixelWorld(gym.Env):
         self.default_state = default_state
         self.accessible_states = []
         self.reward_mapping = reward_mapping
-        reader = EnvReader(source=world_map,source_type='str' if from_string else 'file')
+        reader = EnvReader(source=world_map,source_type='str' if from_string else 'file', symbols=reward_mapping.keys())
         self.text_map = reader.read()
         reader.close()
         for i,line in enumerate(self.text_map):
@@ -153,15 +108,16 @@ class PixelWorld(gym.Env):
             high = np.array([len(self.raw_map)-1,len(self.raw_map[0])-1])
             self.observation_space = spaces.Box(low=low,high=high,dtype=np.uint8)
         self.visited = []
+        self.current_steps = 0
         
-    def _map2screen(self,transpose=False):
+    def _map2screen(self):
         pixel_map = []
         for i in range(self.dim[0]):
             acc = []
             for j in range(self.dim[1]):
                 acc.append(self.raw_map[i][j].color if self.raw_map[i][j] != self.current_state else self.agent_color)
             pixel_map.append(acc)
-        return np.array(pixel_map) if not transpose else np.array(pixel_map).transpose((2,0,1))
+        return np.array(pixel_map) if not self.channels_first else np.array(pixel_map).transpose((2,0,1))
     
     def _action2vec(self,action):
         return self.action_vectors[action]
@@ -191,20 +147,24 @@ class PixelWorld(gym.Env):
             reward = self.current_state.get_reward()
 
         self.visited.append(self.current_state)
+        self.current_steps += 1
         is_terminal = int(self.current_state.terminal)
-        next_obs = s_p_a if self.state_type != 'image' else self._map2screen(True)
-        return next_obs,reward,is_terminal,{} 
+        is_done = (self.current_steps > self.max_steps) or is_terminal
+        next_obs = s_p_a if self.state_type != 'image' else self._map2screen()
+        return next_obs,reward,is_done,{} 
 
     def reset_to_state(self,state):
         for s in self.accessible_states:
             if np.all(s.coords == state):
                 self.current_state = s
         self.visited = []
+        self.current_steps = 0
     
     def reset(self):
         self.current_state = np.random.choice(self.initial_states,1)[0]
-        next_obs = self.current_state.coords if self.state_type != 'image' else self._map2screen(True)
+        next_obs = self.current_state.coords if self.state_type != 'image' else self._map2screen()
         self.visited = []
+        self.current_steps = 0
         return next_obs
     
 if __name__ == "__main__":
