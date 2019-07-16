@@ -5,6 +5,7 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 
+__all__ = ['navigation_alphabet', 'noisy_navigation_alphabet', 'PixelWorld']
 
 class EnvReader(object):
     """

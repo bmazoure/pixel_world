@@ -5,6 +5,8 @@ import os
 is_windows = os.name == 'nt'
 sep = '/' if not is_windows else '\\'
 
+__all__ = ['navigation_alphabet', 'noisy_navigation_alphabet', 'PixelWorld']
+
 register(
     id='PixelWorld-v0',
     entry_point='pixel_world.envs:PixelWorld',
