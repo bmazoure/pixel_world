@@ -16,12 +16,12 @@ pip install -e .
 
 The repo is structured as follows:
 ```
-maps/
- |- room1.txt
 pixel_world/
- envs/
- |-init.py
  |-env_utils.py
+ maps/
+  |- room1.txt
+  |- room2.txt
+  |- ...
 ```
 
 The environment can build arbitrary defined maps. For example, *room5_medium.txt* is defined as
