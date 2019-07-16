@@ -1,1 +1,0 @@
-from pixel_world.envs.pixel_world import PixelWorld
