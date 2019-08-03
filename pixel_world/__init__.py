@@ -1,6 +1,6 @@
 from gym.envs.registration import register
 
-from .env_utils import navigation_alphabet, noisy_navigation_alphabet, PixelWorld
+from pixel_world.env_utils import navigation_alphabet, noisy_navigation_alphabet, PixelWorld
 import os 
 is_windows = os.name == 'nt'
 sep = '/' if not is_windows else '\\'

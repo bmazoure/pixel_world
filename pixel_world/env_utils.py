@@ -5,6 +5,8 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 
+import copy
+
 __all__ = ['navigation_alphabet', 'noisy_navigation_alphabet', 'PixelWorld']
 
 class EnvReader(object):
@@ -41,7 +43,7 @@ class EnvReader(object):
 class PixelWorld(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self,reward_mapping,world_map="maps/room1.txt",default_state=' ',from_string=False,state_type="xy",actions='2d_discrete',channels_first=True):
+    def __init__(self,reward_mapping,world_map="maps/room1.txt",default_state=' ',from_string=False,state_type="xy",actions='2d_discrete',channels_first=True,randomize_goals=False):
         """
         Main class of a pixel world type. Everything is a Discrete State object, with (x,y) coordinates saved, but RGB observations can be returned instead.
         Args:
@@ -53,6 +55,7 @@ class PixelWorld(gym.Env):
             actions: Of the following types: 1d_discrete (up, right, down,left), 1d_horizontal (left, right), 1d_vertical (up, down), 2d_continuous (2d vector between [-1,1]).
             channels_first (bool): If True, tranposes channels to (3,h,w) instead of (h,w,3).
             max_steps (int): Number of maximum episode length.
+            randomize_goals (bool): If True, every time reset() is called, pick a goal state at random among all goal states. Else, multi-goal setting
         """
         self.state_type = state_type
         self.actions = actions
@@ -63,6 +66,7 @@ class PixelWorld(gym.Env):
         self.goal_states = []
         self.default_state = default_state
         self.accessible_states = []
+        self.randomize_goals = randomize_goals
         self.reward_mapping = reward_mapping
         reader = EnvReader(source=world_map,source_type='str' if from_string else 'file', symbols=reward_mapping.keys())
         self.text_map = reader.read()
@@ -74,11 +78,11 @@ class PixelWorld(gym.Env):
                 state = DiscreteState(**reward_mapping[s],coords=np.array([i,j]))
                 acc.append(state)
                 if reward_mapping[s]['terminal']:
-                    self.goal_states.append(state)
-                if state.initial: # Note that this overwrites multiple start states to the most recent one
-                    self.initial_states.append(state)
+                    self.goal_states.append(copy.deepcopy(state))
+                if state.initial:
+                    self.initial_states.append(copy.deepcopy(state))
                 if reward_mapping[s]['accessible']:
-                    self.accessible_states.append(state)
+                    self.accessible_states.append(copy.deepcopy(state))
             self.raw_map.append(acc)
         self.dim = (len(self.raw_map),len(self.raw_map[0]))
         self.current_state = np.random.choice(self.initial_states,1)[0]
@@ -103,13 +107,14 @@ class PixelWorld(gym.Env):
             self.observation_space = spaces.Box(low=low,high=high,dtype=np.uint8)
         self.visited = []
         self.current_steps = 0
+        self.current_map = copy.deepcopy(self.raw_map)
         
     def _map2screen(self):
         pixel_map = []
         for i in range(self.dim[0]):
             acc = []
             for j in range(self.dim[1]):
-                acc.append(self.raw_map[i][j].color if self.raw_map[i][j] != self.current_state else self.agent_color)
+                acc.append(self.agent_color if (i == self.current_state.coords[0] and  j == self.current_state.coords[1]) else self.current_map[i][j].color)
             pixel_map.append(acc)
         return np.array(pixel_map) if not self.channels_first else np.array(pixel_map).transpose((2,0,1))
     
@@ -119,7 +124,7 @@ class PixelWorld(gym.Env):
     def _project(self,state):
         i = max(0,min(self.dim[0]-1,state[0])) # Find new (i,j) coordinates but without the agent falling
         j = max(0,min(self.dim[1]-1,state[1]))
-        next_state = self.raw_map[int(i)][int(j)] # If the state is not accessible (e.g. wall), return -1 and stay in place
+        next_state = self.current_map[int(i)][int(j)] # If the state is not accessible (e.g. wall), return -1 and stay in place
         return (i,j),next_state if next_state.accessible else -1
 
     def step(self, action):
@@ -134,11 +139,12 @@ class PixelWorld(gym.Env):
         if next_state != -1:
             self.current_state = next_state
             s_p_a = next_s_p_a
+        reward = self.current_state.get_reward()
 
-        if self.current_state.collectible and self.current_state in self.visited: # if collectible, reset reward back to default
-            reward = self.reward_mapping[self.default_state]['reward_pdf']()
-        else: 
-            reward = self.current_state.get_reward()
+        if self.current_state.collectible: # if collectible, reset reward back to default
+            i,j = next_s_p_a
+            self.current_map[i][j] = DiscreteState(**self.reward_mapping[self.default_state],coords=np.array([i,j]))
+        
 
         self.visited.append(self.current_state)
         self.current_steps += 1
@@ -154,8 +160,19 @@ class PixelWorld(gym.Env):
         self.visited = []
         self.current_steps = 0
     
+    def _pick_goal(self):
+        current_goal = np.random.choice(self.goal_states,1)[0]
+        i_current,j_current = current_goal.coords
+        for goal in self.goal_states:
+            i,j = goal.coords
+            if not (i_current == i and j_current == j):
+                self.current_map[i][j] = DiscreteState(**self.reward_mapping[self.default_state],coords=np.array([i,j]))
+
     def reset(self):
+        self.current_map = copy.deepcopy(self.raw_map)
         self.current_state = np.random.choice(self.initial_states,1)[0]
+        if self.randomize_goals:
+            self._pick_goal()
         next_obs = self.current_state.coords if self.state_type != 'image' else self._map2screen()
         self.visited = []
         self.current_steps = 0

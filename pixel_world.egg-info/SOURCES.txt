@@ -1,6 +1,0 @@
-setup.py
-pixel_world.egg-info/PKG-INFO
-pixel_world.egg-info/SOURCES.txt
-pixel_world.egg-info/dependency_links.txt
-pixel_world.egg-info/requires.txt
-pixel_world.egg-info/top_level.txt
