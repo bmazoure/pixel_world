@@ -161,7 +161,8 @@ class PixelWorld(gym.Env):
         self.current_steps = 0
         if self.randomize_goals:
             self._pick_goals()
-        return self.current_state
+        next_obs = self.current_state.coords if self.state_type != 'image' else self._map2screen()
+        return next_obs
     
     def _pick_goal(self):
         current_goal = np.random.choice(self.goal_states,1)[0]
