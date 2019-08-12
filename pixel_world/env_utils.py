@@ -159,6 +159,9 @@ class PixelWorld(gym.Env):
                 self.current_state = s
         self.visited = []
         self.current_steps = 0
+        if self.randomize_goals:
+            self._pick_goals()
+        return self.current_state
     
     def _pick_goal(self):
         current_goal = np.random.choice(self.goal_states,1)[0]
