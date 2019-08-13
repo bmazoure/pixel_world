@@ -172,7 +172,9 @@ class PixelWorld(gym.Env):
             if not (i_current == i and j_current == j):
                 self.current_map[i][j] = DiscreteState(**self.reward_mapping[self.default_state],coords=np.array([i,j]))
 
-    def reset(self):
+    def reset(self,set_state=None):
+        if set_state is not None:
+            return self.reset_to_state(set_state)
         self.current_map = copy.deepcopy(self.raw_map)
         self.current_state = np.random.choice(self.initial_states,1)[0]
         if self.randomize_goals:
